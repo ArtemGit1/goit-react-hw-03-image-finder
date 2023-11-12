@@ -64,7 +64,7 @@ const App = () => {
     };
 
     fetchData();
-  }, [page, searchQuery, fetchImages]);
+  }, [page, searchQuery]);
 
   return (
     <div>
