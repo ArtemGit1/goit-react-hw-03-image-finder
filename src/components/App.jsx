@@ -53,14 +53,18 @@ const App = () => {
 
   const closeModal = () => {
     setShowModal(false);
-    setSelectedImage(''); // Очищення значення selectedImage при закритті модального вікна
+    setSelectedImage('');
   };
 
   useEffect(() => {
     if (searchQuery === '') return;
 
-    fetchImages();
-  }, [page, searchQuery]);
+    const fetchData = async () => {
+      await fetchImages();
+    };
+
+    fetchData();
+  }, [page, searchQuery, fetchImages]);
 
   return (
     <div>
