@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { Component } from 'react';
 import axios from 'axios';
 import './styles.css';
 import Searchbar from 'components/Searchbar/Searchbar.js';
@@ -9,23 +9,23 @@ import Modal from 'components/Modal/Modal.js';
 
 const API_KEY = '39751555-c2fbc931ac716611d03f33f4d';
 
-const App = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [images, setImages] = useState([]);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState('');
+class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      searchQuery: '',
+      images: [],
+      page: 1,
+      loading: false,
+      showModal: false,
+      selectedImage: '',
+    };
+  }
 
-  const handleSubmit = (searchQuery) => {
-    setSearchQuery(searchQuery);
-    setPage(1);
-    setImages([]);
-  };
-
-  const fetchImages = async () => {
+  fetchImages = async () => {
+    const { searchQuery, page } = this.state;
     try {
-      setLoading(true);
+      this.setState({ loading: true });
       const response = await axios.get(
         `https://pixabay.com/api/?q=${searchQuery}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
       );
@@ -34,51 +34,47 @@ const App = () => {
         webformatURL: image.webformatURL,
         largeImageURL: image.largeImageURL,
       }));
-      setImages((prevImages) => [...prevImages, ...newImages]);
+      this.setState((prevState) => ({ images: [...prevState.images, ...newImages] }));
     } catch (error) {
       console.error('Error fetching images', error);
     } finally {
-      setLoading(false);
+      this.setState({ loading: false });
     }
   };
 
-  const loadMore = () => {
-    setPage((prevPage) => prevPage + 1);
+  loadMore = () => {
+    this.setState((prevState) => ({ page: prevState.page + 1 }), this.fetchImages);
   };
 
-  const openModal = (image) => {
-    setShowModal(true);
-    setSelectedImage(image.largeImageURL);
+  openModal = (image) => {
+    this.setState({ showModal: true, selectedImage: image.largeImageURL });
   };
 
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedImage('');
+  closeModal = () => {
+    this.setState({ showModal: false, selectedImage: '' });
   };
 
-  useEffect(() => {
-    if (searchQuery === '') return;
+  handleSubmit = (searchQuery) => {
+    this.setState({ searchQuery, page: 1, images: [] }, this.fetchImages);
+  };
 
-    const fetchData = async () => {
-      await fetchImages();
-    };
+  render() {
+    const { searchQuery, images, loading, showModal, selectedImage } = this.state;
 
-    fetchData();
-  }, [page, searchQuery]);
+    return (
+      <div>
+        <Searchbar onSubmit={this.handleSubmit} value={searchQuery} />
 
-  return (
-    <div>
-      <Searchbar onSubmit={handleSubmit} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        <ImageGallery images={images} openModal={this.openModal} />
 
-      <ImageGallery images={images} openModal={openModal} />
+        {loading && <Loader />}
 
-      {loading && <Loader />}
+        {images.length > 0 && !loading && <Button onLoadMore={this.loadMore} />}
 
-      {images.length > 0 && !loading && <Button onLoadMore={loadMore} />}
-
-      {showModal && <Modal onClose={closeModal} largeImageURL={selectedImage} />}
-    </div>
-  );
-};
+        {showModal && <Modal onClose={this.closeModal} largeImageURL={selectedImage} />}
+      </div>
+    );
+  }
+}
 
 export default App;
